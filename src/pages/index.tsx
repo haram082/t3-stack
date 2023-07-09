@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { api } from "~/utils/api";
+import { RouterOutputs, api } from "~/utils/api";
 import { SignInButton } from "@clerk/nextjs";
 import { SignOutButton } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
@@ -8,6 +8,8 @@ import { useUser } from "@clerk/nextjs";
 
 const CreatePostWizard =()=>{
   const{user} = useUser()
+  console.log(user)
+
   if(!user) return null
   return(
     <div className="flex gap-4 w-full">
@@ -16,6 +18,27 @@ const CreatePostWizard =()=>{
       </div>
   )
 }
+
+type PostWithUser = RouterOutputs["posts"]["getAll"][number]
+const PostView = (props: PostWithUser)=>{
+  const {post, user} = props;
+  return (
+    <div key={post.id} className="flex gap-3 border-b border-slate-400 p-4">
+      <img src={user.profilePicture} alt="author_pfp"className="h-12 w-12 rounded-full" />
+      <div className="flex flex-col">
+        <div className="flex gap-1">
+          <span className="font-bold text-slate-200">{user.name}</span>
+          <span className="text-slate-300">@{user.username} ·</span>  
+          <span className="text-slate-300">1 hour ago</span>
+        </div>
+        <span className="text-xl">{post.content}</span></div>
+    </div>
+  )
+    
+}
+
+
+
 
 export default function Home() {
   const user = useUser()
@@ -34,17 +57,15 @@ export default function Home() {
       <main className="flex justify-center h-screen">
         <div className="h-full w-full md:max-w-2xl border-x border-slate-400">
     
-      <div className="border-b border-slate-400 p-4 flex justify-between">
+      <div className="border-b border-slate-400 p-8 flex justify-between">
         {!user.isSignedIn && <SignInButton/>}
       {user.isSignedIn && <CreatePostWizard />} 
       {user.isSignedIn && <SignOutButton />} </div>
 
 
       <ul className="flex flex-col ">
-        {data?.map((post) => (
-          <li key={post.id} className=" border-b border-slate-400 p-8">
-              <div>{post.content}</div>
-          </li>
+        {data?.map(({post, user}) => (
+          <PostView key={post.id} post={post} user={user} />
         ))}
       </ul> 
       </div> 
