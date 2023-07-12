@@ -6,11 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { TRPCError, initTRPC } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { prisma } from "~/server/db";
+import { getAuth } from "@clerk/nextjs/server";
 
 /**
  * 1. CONTEXT
@@ -32,9 +33,14 @@ type CreateContextOptions = Record<string, never>;
  *
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
-const createInnerTRPCContext = (_opts: CreateContextOptions) => {
+export const createTRPCContext = (opts: CreateNextContextOptions) => {
+  const {req} = opts;
+  const sesh = getAuth(req)
+  const userId = sesh.userId
+  console.log(userId, sesh)
   return {
     prisma,
+    currentUser: userId,
   };
 };
 
@@ -44,9 +50,9 @@ const createInnerTRPCContext = (_opts: CreateContextOptions) => {
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContext = (_opts: CreateNextContextOptions) => {
-  return createInnerTRPCContext({});
-};
+// export const createTRPCContext = (_opts: CreateNextContextOptions) => {
+//   return createInnerTRPCContext({});
+// };
 
 /**
  * 2. INITIALIZATION
@@ -92,3 +98,17 @@ export const createTRPCRouter = t.router;
  * are logged in.
  */
 export const publicProcedure = t.procedure;
+
+const enforceUserIsAuthed = t.middleware(async({ctx, next})=>{
+  if(!ctx.currentUser){
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+    })
+  }
+  return next({
+    ctx: {
+      currentUser: ctx.currentUser
+    }
+  })
+})
+export const privateProcedure = t.procedure.use(enforceUserIsAuthed)
