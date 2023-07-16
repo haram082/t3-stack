@@ -7,6 +7,7 @@ import Link from "next/link";
 export const Sidebar = () => {
     const {user, isSignedIn} = useUser()
     if(!user) return null
+    if(!user.username) return null
     return (
         <ul className="pr-4 text-center flex flex-col gap-2 mt-2">
             <Link href="/">Home</Link>
