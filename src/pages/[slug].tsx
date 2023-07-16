@@ -35,6 +35,7 @@ export const ProfileFeed = (props: {userId: string}) => {
 
 const ProfilePage: NextPage = () => {
   const router = useRouter()
+  const{user} = useUser()
   // Get the slug parameter from the router query object
   const {slug} = router.query
   if(typeof slug !== "string") return null
@@ -42,7 +43,6 @@ const ProfilePage: NextPage = () => {
   // Fetch the user data using the getUserbyUsername method from the profile router
   const name = slug.replace("@", "")
   const {data, isLoading} = api.profile.getUserbyUsername.useQuery({username: name})
-  const{user} = useUser()
   
   if(isLoading){
     return <LoadingPage/>
